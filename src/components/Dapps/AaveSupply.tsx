@@ -1,14 +1,10 @@
 import { Block } from '@/components/Block/Block'
-import { UniqueIdentifier } from '@dnd-kit/core'
+import { DappId } from '@/components/Dapps/constants'
 import { FC } from 'react'
 
-interface Props {
-  id: UniqueIdentifier
-}
-
-const AaveSupply: FC<Props> = (props) => {
+const AaveSupply: FC = () => {
   return (
-    <Block {...props} header="Supply">
+    <Block id={DappId.AAVE_SUPPLY} header="Supply">
       <div className="block-section">
         <div className="flex justify-between">
           <div className="block-section-header">Wallet balance</div>

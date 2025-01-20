@@ -1,5 +1,5 @@
 import { useBlockContext } from '@/components/Block/BlockContext'
-import { UniqueIdentifier } from '@dnd-kit/core'
+import { DappId } from '@/components/Dapps/constants'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { FC, PropsWithChildren, useCallback } from 'react'
@@ -7,7 +7,7 @@ import { FC, PropsWithChildren, useCallback } from 'react'
 import './style.css'
 
 interface Props extends PropsWithChildren {
-  id: UniqueIdentifier
+  id: DappId
   header: string
 }
 

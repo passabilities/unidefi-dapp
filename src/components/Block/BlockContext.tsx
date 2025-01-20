@@ -2,26 +2,16 @@
 
 import AaveBorrow from '@/components/Dapps/AaveBorrow'
 import AaveSupply from '@/components/Dapps/AaveSupply'
-import { DndContext, MouseSensor, UniqueIdentifier, useSensor, useSensors } from '@dnd-kit/core'
+import { DappId } from '@/components/Dapps/constants'
+import { DndContext, MouseSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { restrictToParentElement } from '@dnd-kit/modifiers'
-import {
-  arrayMove,
-  SortableContext,
-  rectSortingStrategy,
-} from '@dnd-kit/sortable'
-import {
-  FC,
-  PropsWithChildren,
-  createContext,
-  useContext,
-  useState,
-  useCallback, ReactElement,
-} from 'react'
+import { arrayMove, rectSortingStrategy, SortableContext } from '@dnd-kit/sortable'
+import { createContext, FC, PropsWithChildren, ReactElement, useCallback, useContext, useState } from 'react'
 
 interface DataType {
-  blocks: { id: UniqueIdentifier, ele: ReactElement }[]
-  addBlock: (type: string) => void
-  removeBlock: (id: UniqueIdentifier) => void
+  blocks: { id: DappId, ele: ReactElement }[]
+  addBlock: (id: DappId) => void
+  removeBlock: (id: DappId) => void
 }
 
 const BlockContext = createContext<DataType>({
@@ -35,9 +25,9 @@ const BlockContext = createContext<DataType>({
 export const BlockContextProvider: FC<PropsWithChildren> = ({
   children,
 }) => {
-  const [ blocks, setBlocks ] = useState<{ id: UniqueIdentifier, ele: ReactElement }[]>([])
+  const [ blocks, setBlocks ] = useState<{ id: DappId, ele: ReactElement }[]>([])
 
-  const removeBlock = useCallback((id: UniqueIdentifier) => {
+  const removeBlock = useCallback((id: DappId) => {
     const result = Array.from(blocks)
     const index = result.findIndex((item) => item.id === id)
     if (index > -1) {
@@ -46,17 +36,17 @@ export const BlockContextProvider: FC<PropsWithChildren> = ({
     }
   }, [ blocks ])
 
-  const addBlock = useCallback((type: string) => {
+  const addBlock = useCallback((id: DappId) => {
     const newBlock = (() => {
-      switch (type) {
-        case 'aave-supply':
-          return <AaveSupply id={type}/>
-        case 'aave-borrow':
-          return <AaveBorrow id={type}/>
+      switch (id) {
+        case DappId.AAVE_SUPPLY:
+          return <AaveSupply />
+        case DappId.AAVE_BORROW:
+          return <AaveBorrow />
       }
     })()
 
-    if (newBlock) setBlocks([ ...blocks, { id: type, ele: newBlock } ])
+    if (newBlock) setBlocks([ ...blocks, { id, ele: newBlock } ])
   }, [ blocks ])
 
   const data: DataType = {
