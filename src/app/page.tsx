@@ -8,9 +8,12 @@ const Home = () => {
   return (
     <div
       className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <input type="button" value="Add Aave Supply" onClick={() => addBlock('aave')} />
+      <div>
+        <input type="button" value="Add Aave Supply" onClick={() => addBlock('aave-supply')}/>
+        <input type="button" value="Add Aave Borrow" onClick={() => addBlock('aave-borrow')}/>
+      </div>
       <main className="flex gap-8 row-start-2 items-center sm:items-start w-3/4">
-        {blocks}
+        {blocks.map(({ id, ele }) => ({ ...ele, key: id.toString() }))}
       </main>
     </div>
   )

@@ -1,14 +1,14 @@
 import { Block } from '@/components/Block/Block'
 import { UniqueIdentifier } from '@dnd-kit/core'
-import { FC } from 'react'
+import { FC, ReactElement } from 'react'
 
 interface Props {
   id: UniqueIdentifier
 }
 
-const AaveSupply: FC<Props> = (props) => {
+const AaveBorrow: FC<Props> = (props): ReactElement<{ id: UniqueIdentifier }> => {
   return (
-    <Block {...props} header="Supply">
+    <Block {...props} header="Borrow">
       <div className="block-section">
         <div className="flex justify-between">
           <div className="block-section-header">Wallet balance</div>
@@ -32,7 +32,7 @@ const AaveSupply: FC<Props> = (props) => {
 
         <div className="block-section-content flex flex-col">
           <div className="flex justify-between">
-            <div>Supply APY</div>
+            <div>Borrow APY</div>
             <div className="font-bold">1.88%</div>
           </div>
           <div className="flex justify-between">
@@ -43,10 +43,10 @@ const AaveSupply: FC<Props> = (props) => {
       </div>
 
       <div className="block-section">
-        <input type="button" value="Supply"/>
+        <input type="button" value="Borrow"/>
       </div>
     </Block>
   )
 }
 
-export default AaveSupply
+export default AaveBorrow

@@ -1,54 +1,45 @@
 import { useBlockContext } from '@/components/Block/BlockContext'
-import { UniqueIdentifier, useDraggable, useDroppable } from '@dnd-kit/core'
-import { CSSProperties, FC, PropsWithChildren, useCallback } from 'react'
+import { UniqueIdentifier } from '@dnd-kit/core'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
+import { FC, PropsWithChildren, useCallback } from 'react'
 
 import './style.css'
 
 interface Props extends PropsWithChildren {
   id: UniqueIdentifier
-  index: number
   header: string
 }
 
-export const Block: FC<Props> = ({ id, index, header, children }) => {
+export const Block: FC<Props> = ({ id, header, children }) => {
   const { removeBlock } = useBlockContext()
 
-  const { attributes, listeners, setNodeRef: setDraggableNodeRef, transform } = useDraggable({
-    id,
-    data: {
-      index,
-    },
-  })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id })
 
-  const { setNodeRef: setDroppableNodeRef } = useDroppable({
-    id,
-    data: {
-      index,
-    },
-  })
-
-  const style: CSSProperties = {
-    transform: undefined,
-  }
-  if (transform) {
-    style.transform = `translate3d(${transform.x}px, ${transform.y}px, 0)`
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
   }
 
   const onClose = useCallback(() => {
     console.log('on close')
-    removeBlock(index)
-  }, [ index, removeBlock ])
+    removeBlock(id)
+  }, [ id, removeBlock ])
 
   return (
-    <div ref={setDraggableNodeRef} className={'flex flex-col w-1/2'} style={style}>
-      <div ref={setDroppableNodeRef}>
-        <div className={'flex justify-between py-2'} {...listeners} {...attributes}>
-          <span className={'block-header'}>{header}</span>
-          <button onClick={() => onClose()}>X</button>
-        </div>
-        <div className={'block'} style={{ background: '#ececec' }}>
-          {children}
-        </div>
+    <div ref={setNodeRef} className={'flex flex-col w-1/2'} style={style}>
+      <div className={'flex justify-between py-2'} {...listeners} {...attributes}>
+        <span className={'block-header'}>{header}</span>
+        <button onClick={() => onClose()}>X</button>
+      </div>
+      <div className={'block'} style={{ background: '#ececec' }}>
+        {children}
       </div>
     </div>
   )

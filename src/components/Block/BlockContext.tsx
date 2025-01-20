@@ -1,21 +1,27 @@
-"use client"
+'use client'
 
+import AaveBorrow from '@/components/Dapps/AaveBorrow'
 import AaveSupply from '@/components/Dapps/AaveSupply'
-import { DndContext, MouseSensor, useSensor, useSensors } from '@dnd-kit/core'
+import { DndContext, MouseSensor, UniqueIdentifier, useSensor, useSensors } from '@dnd-kit/core'
 import { restrictToParentElement } from '@dnd-kit/modifiers'
+import {
+  arrayMove,
+  SortableContext,
+  rectSortingStrategy,
+} from '@dnd-kit/sortable'
 import {
   FC,
   PropsWithChildren,
   createContext,
   useContext,
   useState,
-  useCallback, ReactNode,
+  useCallback, ReactElement,
 } from 'react'
 
 interface DataType {
-  blocks: ReactNode[]
+  blocks: { id: UniqueIdentifier, ele: ReactElement }[]
   addBlock: (type: string) => void
-  removeBlock: (index: number) => void
+  removeBlock: (id: UniqueIdentifier) => void
 }
 
 const BlockContext = createContext<DataType>({
@@ -29,30 +35,32 @@ const BlockContext = createContext<DataType>({
 export const BlockContextProvider: FC<PropsWithChildren> = ({
   children,
 }) => {
-  const [ blocks, setBlocks ] = useState<ReactNode[]>([])
+  const [ blocks, setBlocks ] = useState<{ id: UniqueIdentifier, ele: ReactElement }[]>([])
 
-  const removeBlock = useCallback((index: number) => {
+  const removeBlock = useCallback((id: UniqueIdentifier) => {
     const result = Array.from(blocks)
-    result.splice(index, 1)
-    setBlocks(result)
+    const index = result.findIndex((item) => item.id === id)
+    if (index > -1) {
+      result.splice(index, 1)
+      setBlocks(result)
+    }
   }, [ blocks ])
 
   const addBlock = useCallback((type: string) => {
-    const index = blocks.length
     const newBlock = (() => {
       switch (type) {
-        case 'aave':
-          return <AaveSupply key={type} index={index} />
+        case 'aave-supply':
+          return <AaveSupply id={type}/>
+        case 'aave-borrow':
+          return <AaveBorrow id={type}/>
       }
     })()
 
-    setBlocks([ ...blocks, newBlock ])
-  }, [blocks])
+    if (newBlock) setBlocks([ ...blocks, { id: type, ele: newBlock } ])
+  }, [ blocks ])
 
   const data: DataType = {
     blocks,
-    // setBlocks,
-
     addBlock,
     removeBlock,
   }
@@ -63,7 +71,7 @@ export const BlockContextProvider: FC<PropsWithChildren> = ({
       activationConstraint: {
         distance: 10,
       },
-    })
+    }),
   )
 
   return (
@@ -74,9 +82,24 @@ export const BlockContextProvider: FC<PropsWithChildren> = ({
         onDragStart={() => {
         }}
         onDragEnd={(evt) => {
+          const { active, over } = evt
+
+          if (active.id !== over?.id) {
+            setBlocks((items) => {
+              const oldIndex = items.findIndex((item) => item.id === active.id)
+              const newIndex = items.findIndex((item) => item.id === (over?.id ?? ''))
+
+              return arrayMove(items, oldIndex, newIndex)
+            })
+          }
         }}
       >
-        {children}
+        <SortableContext
+          items={blocks}
+          strategy={rectSortingStrategy}
+        >
+          {children}
+        </SortableContext>
       </DndContext>
     </BlockContext.Provider>
   )
