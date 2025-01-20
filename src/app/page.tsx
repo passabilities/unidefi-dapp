@@ -1,19 +1,20 @@
 'use client'
 
 import { useBlockContext } from '@/components/Block/BlockContext'
+import AddDappButton from '@/components/Dapps/AddDappButton'
 import { DappId } from '@/components/Dapps/constants'
 
 const Home = () => {
-  const { blocks, addBlock } = useBlockContext()
+  const { blocks } = useBlockContext()
 
   return (
     <div
-      className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <div>
-        <input type="button" value="Add Aave Supply" onClick={() => addBlock(DappId.AAVE_SUPPLY)}/>
-        <input type="button" value="Add Aave Borrow" onClick={() => addBlock(DappId.AAVE_BORROW)}/>
+      className="flex flex-col items-center justify-items-center min-h-screen p-8 gap-8 font-[family-name:var(--font-geist-sans)]">
+      <div className="flex w-full">
+        <AddDappButton id={DappId.AAVE_SUPPLY} />
+        <AddDappButton id={DappId.AAVE_BORROW} />
       </div>
-      <main className="flex gap-8 row-start-2 items-center sm:items-start w-3/4">
+      <main className="flex flex-grow gap-8 row-start-2 items-center w-3/4">
         {blocks.map(({ id, ele }) => ({ ...ele, key: id.toString() }))}
       </main>
     </div>
