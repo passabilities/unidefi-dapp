@@ -1,19 +1,19 @@
-.block {
+.dapp-block {
     @apply grid gap-4 p-3 rounded-lg;
 }
 
-.block-header {
+.dapp-block-header {
     @apply text-2xl font-extrabold;
 }
 
-.block-section {
+.dapp-block-section {
 }
 
-.block-section-header {
+.dapp-block-section-header {
     @apply text-sm;
 
     color: #919191;
 }
 
-.block-section-content {
+.dapp-block-section-content {
 }

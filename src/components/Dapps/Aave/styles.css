@@ -1,0 +1,7 @@
+.collateral-usage.enabled {
+    color: limegreen;
+}
+
+.collateral-usage.disabled {
+    color: orangered;
+}

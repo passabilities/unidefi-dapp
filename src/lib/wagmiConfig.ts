@@ -8,6 +8,12 @@ const projectId = 'YOUR_PROJECT_ID'
 
 const supportedChains: Chain[] = [ mainnet ]
 
+// declare module 'wagmi' {
+//   interface Register {
+//     config: typeof config
+//   }
+// }
+
 export const config = getDefaultConfig({
   appName: 'Unidefi',
   projectId,
@@ -16,5 +22,7 @@ export const config = getDefaultConfig({
   storage: createStorage({
     storage: cookieStorage,
   }),
-  transports: supportedChains.reduce((obj, chain) => ({ ...obj, [chain.id]: http() }), {}),
+  transports: {
+    [mainnet.id]: http(`https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`)
+  },
 })

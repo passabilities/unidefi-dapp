@@ -9,9 +9,10 @@ import './style.css'
 interface Props extends PropsWithChildren {
   id: DappId
   header: string
+  height?: number
 }
 
-export const Block: FC<Props> = ({ id, header, children }) => {
+export const Block: FC<Props> = ({ id, header, height, children }) => {
   const { removeBlock } = useBlockContext()
 
   const {
@@ -28,17 +29,16 @@ export const Block: FC<Props> = ({ id, header, children }) => {
   }
 
   const onClose = useCallback(() => {
-    console.log('on close')
     removeBlock(id)
   }, [ id, removeBlock ])
 
   return (
     <div ref={setNodeRef} className={'flex flex-col w-1/2'} style={style}>
       <div className={'flex justify-between py-2'} {...listeners} {...attributes}>
-        <span className={'block-header'}>{header}</span>
+        <span className={'dapp-block-header'}>{header}</span>
         <button onClick={() => onClose()}>X</button>
       </div>
-      <div className={'block'} style={{ background: '#ececec' }}>
+      <div className={'dapp-block'} style={{ background: '#ececec', height }}>
         {children}
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client'
 
 import { BlockContextProvider } from '@/components/Block/BlockContext'
+import { AlchemyContextProvider } from '@/lib/context/AlchemyContext'
 import { config } from '@/lib/wagmiConfig'
 import { lightTheme, RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -28,9 +29,11 @@ const Providers: FC<Props> = ({ children, initialState }) => {
             overlayBlur: 'small',
           })}
         >
-          <BlockContextProvider>
-            {children}
-          </BlockContextProvider>
+          <AlchemyContextProvider>
+            <BlockContextProvider>
+              {children}
+            </BlockContextProvider>
+          </AlchemyContextProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
     </WagmiProvider>

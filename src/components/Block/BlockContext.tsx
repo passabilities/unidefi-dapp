@@ -1,7 +1,7 @@
 'use client'
 
-import AaveBorrow from '@/components/Dapps/AaveBorrow'
-import AaveSupply from '@/components/Dapps/AaveSupply'
+import AaveBorrow from '@/components/Dapps/Aave/AaveBorrow'
+import AaveSupply from '@/components/Dapps/Aave/AaveSupply'
 import { DappId } from '@/components/Dapps/constants'
 import { DndContext, MouseSensor, useSensor, useSensors } from '@dnd-kit/core'
 import { restrictToParentElement } from '@dnd-kit/modifiers'
