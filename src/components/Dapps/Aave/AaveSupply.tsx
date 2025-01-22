@@ -4,8 +4,8 @@ import * as markets from '@bgd-labs/aave-address-book'
 import { Block } from '@/components/Block/Block'
 import { DappId } from '@/components/Dapps/constants'
 import BN from 'bignumber.js'
-import { FC, useMemo } from 'react'
-import { getAddress } from 'viem'
+import { FC, useMemo, useState } from 'react'
+import { getAddress, parseUnits } from 'viem'
 import { useAccount, useBalance } from 'wagmi'
 
 import './styles.css'
@@ -33,6 +33,11 @@ const AaveSupply: FC = () => {
     token: markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING,
   })
 
+  const [ amount, setAmount ] = useState({
+    formatted: '',
+    value: 0n,
+  })
+
   return (
     <Block id={DappId.AAVE_SUPPLY} header="Supply">
       <div className="dapp-block-section">
@@ -58,8 +63,15 @@ const AaveSupply: FC = () => {
       <div className="dapp-block-section">
         <div className="dapp-block-section-header">Amount</div>
 
-        <div className="dapp-block-section-content">
-          <input className="" placeholder="0.00"/>
+        <div className="dapp-block-section-content grid grid-cols-4 gap-2">
+          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount.formatted} onChange={(evt) => {
+            const formatted = evt.target.value
+            const value = parseUnits(formatted, stETHBalance.data?.decimals ?? 0)
+            setAmount({ formatted, value })
+          }}/>
+          <input className="col-start-4 col-end-4" type="button" value="Max" onClick={() => {
+            if (stETHBalance.data) setAmount({ formatted: stETHBalance.data.formatted, value: stETHBalance.data.value })
+          }}/>
         </div>
       </div>
 
