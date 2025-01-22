@@ -1,6 +1,9 @@
 import { getEthersProvider } from '@/lib/ethers'
 import { config } from '@/lib/wagmiConfig'
-import { LPBorrowParamsType } from '@aave/contract-helpers/dist/esm/v3-pool-contract/lendingPoolTypes'
+import {
+  LPBorrowParamsType,
+  LPSupplyParamsType,
+} from '@aave/contract-helpers/dist/esm/v3-pool-contract/lendingPoolTypes'
 import {
   UiPoolDataProvider,
   UiIncentiveDataProvider,
@@ -125,6 +128,74 @@ export const useAaveData = ({ address }: AaveDataArgs) => {
   }
 }
 
+interface AaveSupplyArgs extends LPSupplyParamsType {
+
+}
+
+export const useAaveSupply = (args: AaveSupplyArgs) => {
+  const sendTx = useSendTransaction()
+
+  const execute = useCallback(async () => {
+    const pool = new Pool(provider, {
+      POOL: markets.AaveV3Ethereum.POOL,
+      WETH_GATEWAY: markets.AaveV3Ethereum.WETH_GATEWAY,
+    })
+
+    const txs = await pool.supply({
+      user: args.user,
+      reserve: args.reserve,
+      amount: args.amount,
+      onBehalfOf: args.onBehalfOf,
+
+      encodedTxData: args.encodedTxData,
+      referralCode: args.referralCode,
+      useOptimizedPath: args.useOptimizedPath,
+    })
+    console.log({txs})
+
+    const txChain = txs.reduce(
+      (chain, { txType, tx: getRawTx }) => chain.then(async () => {
+        const rawTx = await getRawTx()
+
+        const gas = rawTx.gasLimit ? BigInt(rawTx.gasLimit.toString()) : undefined
+        const gasPrice = rawTx.gasPrice ? BigInt(rawTx.gasPrice.toString()) : undefined
+        const value = rawTx.value ? BigInt(rawTx.value) : undefined
+
+        const processedRawTx = {
+          to: rawTx.to as `0x${string}`,
+          nonce: rawTx.nonce,
+          gas,
+          gasPrice,
+          data: rawTx.data as `0x${string}`,
+          value,
+        }
+
+        await sendTx.sendTransactionAsync(processedRawTx)
+      }),
+      Promise.resolve(),
+    )
+
+    try {
+      await txChain
+    } catch (err) {
+      console.error(err)
+    }
+  }, [
+    args.amount,
+    args.encodedTxData,
+    args.onBehalfOf,
+    args.referralCode,
+    args.reserve,
+    args.useOptimizedPath,
+    args.user,
+    sendTx,
+  ])
+
+  return {
+    execute,
+  }
+}
+
 interface AaveBorrowArgs extends LPBorrowParamsType {
 
 }
@@ -151,9 +222,7 @@ export const useAaveBorrow = (args: AaveBorrowArgs) => {
       useOptimizedPath: args.useOptimizedPath,
     })
 
-    // TODO: execute the transactions
     const txChain = txs.reduce(
-      // (chain, { txType, tx }) => chain.then(async () => sendTx.sendTransactionAsync(await tx())),
       (chain, { txType, tx: getRawTx }) => chain.then(async () => {
         const rawTx = await getRawTx()
 
@@ -190,7 +259,7 @@ export const useAaveBorrow = (args: AaveBorrowArgs) => {
     args.reserve,
     args.useOptimizedPath,
     args.user,
-    sendTx
+    sendTx,
   ])
 
   return {

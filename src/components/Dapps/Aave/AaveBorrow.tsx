@@ -8,7 +8,7 @@ import * as markets from '@bgd-labs/aave-address-book'
 import BN from 'bignumber.js'
 import { FC, useMemo, useState } from 'react'
 import { getAddress } from 'viem'
-import { useAccount, useToken } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 interface Token {
   symbol: string
@@ -30,9 +30,6 @@ const AaveBorrow: FC = () => {
   const { address } = useAccount()
 
   const [ selectedToken, setSelectedToken ] = useState<Token>(tokens[0])
-  const { data: tokenData } = useToken({
-    address: selectedToken.address,
-  })
 
   const { data: aaveData } = useAaveContext()
   const userReserveSummary = useMemo(
@@ -90,8 +87,6 @@ const AaveBorrow: FC = () => {
             setAmount(evt.target.value)
           }}/>
           <input className="col-start-4 col-end-4" type="button" value="Max" onClick={() => {
-            if (!tokenData) return
-
             setAmount(maxBorrowAmount)
           }}/>
         </div>
@@ -111,7 +106,7 @@ const AaveBorrow: FC = () => {
       </div>
 
       <div className="block-section">
-        <input type="button" value="Borrow" onClick={async () => borrow.execute()}/>
+        <input type="button" value="Borrow" onClick={() => borrow.execute()}/>
       </div>
     </Block>
   )

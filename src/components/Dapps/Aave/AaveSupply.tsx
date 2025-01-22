@@ -1,3 +1,4 @@
+import { useAaveSupply } from '@/components/Dapps/Aave/aave-utils'
 import { useAaveContext } from '@/components/Dapps/Aave/AaveContext'
 import Dropdown from '@/components/Dropdown'
 import * as markets from '@bgd-labs/aave-address-book'
@@ -5,7 +6,7 @@ import { Block } from '@/components/Block/Block'
 import { DappId } from '@/components/Dapps/constants'
 import BN from 'bignumber.js'
 import { FC, useMemo, useState } from 'react'
-import { getAddress, parseUnits } from 'viem'
+import { getAddress } from 'viem'
 import { useAccount, useBalance } from 'wagmi'
 
 import './styles.css'
@@ -25,17 +26,22 @@ const tokens: Token[] = [
 const AaveSupply: FC = () => {
   const { address } = useAccount()
 
+  const [ selectedToken, setSelectedToken ] = useState<Token>(tokens[0])
+
   const { data: aaveData } = useAaveContext()
   const userReserveSummary = useMemo(() => aaveData?.userSummary?.userReservesData?.find(r => getAddress(r.underlyingAsset) === getAddress(markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING)), [ aaveData?.userSummary?.userReservesData ])
 
-  const stETHBalance = useBalance({
+  const tokenBalance = useBalance({
     address,
-    token: markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING,
+    token: selectedToken.address,
   })
 
-  const [ amount, setAmount ] = useState({
-    formatted: '',
-    value: 0n,
+  const [ amount, setAmount ] = useState('')
+
+  const supply = useAaveSupply({
+    user: address!,
+    reserve: selectedToken.address,
+    amount,
   })
 
   return (
@@ -55,7 +61,7 @@ const AaveSupply: FC = () => {
         <div className="dapp-block-section-header">Wallet balance</div>
         <div className="dapp-block-section-content overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="text-xl text-ellipsis">
-            ${new BN(userReserveSummary?.reserve?.priceInUSD ?? '0').multipliedBy(stETHBalance.data?.formatted ?? 0).toFormat(2)} ~ {stETHBalance.data?.formatted}
+            ${new BN(userReserveSummary?.reserve?.priceInUSD ?? '0').multipliedBy(tokenBalance.data?.formatted ?? 0).toFormat(2)} ~ {tokenBalance.data?.formatted}
           </span>
         </div>
       </div>
@@ -64,13 +70,11 @@ const AaveSupply: FC = () => {
         <div className="dapp-block-section-header">Amount</div>
 
         <div className="dapp-block-section-content grid grid-cols-4 gap-2">
-          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount.formatted} onChange={(evt) => {
-            const formatted = evt.target.value
-            const value = parseUnits(formatted, stETHBalance.data?.decimals ?? 0)
-            setAmount({ formatted, value })
+          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount} onChange={(evt) => {
+            setAmount(evt.target.value)
           }}/>
           <input className="col-start-4 col-end-4" type="button" value="Max" onClick={() => {
-            if (stETHBalance.data) setAmount({ formatted: stETHBalance.data.formatted, value: stETHBalance.data.value })
+            if (tokenBalance.data) setAmount(tokenBalance.data.formatted)
           }}/>
         </div>
       </div>
@@ -100,7 +104,7 @@ const AaveSupply: FC = () => {
       </div>
 
       <div className="dapp-block-section">
-        <input type="button" value="Supply"/>
+        <input type="button" value="Supply" onClick={() => supply.execute()}/>
       </div>
     </Block>
   )
