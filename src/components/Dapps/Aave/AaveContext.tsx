@@ -24,8 +24,6 @@ export const AaveContextProvider: FC<PropsWithChildren> = ({
   const { address } = useAccount()
   const aaveData = useAaveData({ address })
 
-  console.log({ address, aaveData })
-
   return (
     <AaveContext.Provider value={{
       ...aaveData

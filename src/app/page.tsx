@@ -11,7 +11,7 @@ const Home = () => {
   return (
     <div
       className="flex flex-col items-center justify-items-center min-h-screen p-8 gap-8 font-[family-name:var(--font-geist-sans)]">
-      <ConnectButton />
+      <ConnectButton/>
       <div className="flex w-full">
         <AddDappButton id={DappId.AAVE_SUPPLY}/>
         <AddDappButton id={DappId.AAVE_BORROW}/>

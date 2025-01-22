@@ -1,12 +1,14 @@
 import { Block } from '@/components/Block/Block'
+import { useAaveBorrow } from '@/components/Dapps/Aave/aave-utils'
 import { useAaveContext } from '@/components/Dapps/Aave/AaveContext'
 import { DappId } from '@/components/Dapps/constants'
 import Dropdown from '@/components/Dropdown'
+import { InterestRate } from '@aave/contract-helpers'
 import * as markets from '@bgd-labs/aave-address-book'
 import BN from 'bignumber.js'
 import { FC, useMemo, useState } from 'react'
-import { formatUnits, getAddress, parseUnits } from 'viem'
-import { useToken } from 'wagmi'
+import { getAddress } from 'viem'
+import { useAccount, useToken } from 'wagmi'
 
 interface Token {
   symbol: string
@@ -25,6 +27,8 @@ const tokens: Token[] = [
 ]
 
 const AaveBorrow: FC = () => {
+  const { address } = useAccount()
+
   const [ selectedToken, setSelectedToken ] = useState<Token>(tokens[0])
   const { data: tokenData } = useToken({
     address: selectedToken.address,
@@ -36,19 +40,22 @@ const AaveBorrow: FC = () => {
       if (!aaveData?.userSummary || !selectedToken) return
       return aaveData?.userSummary.userReservesData.find(r => getAddress(r.underlyingAsset) === getAddress(selectedToken.address))
     },
-    [aaveData?.userSummary, selectedToken]
+    [ aaveData?.userSummary, selectedToken ],
   )
 
   const maxBorrowAmount = useMemo(() => {
-    if (!userReserveSummary || !aaveData || !tokenData) return 0n
+    if (!userReserveSummary || !aaveData) return '0'
 
-    const amount = new BN(userReserveSummary.reserve.priceInUSD).multipliedBy(aaveData.userSummary.availableBorrowsUSD).toString()
-    return parseUnits(amount, tokenData.decimals)
-  }, [aaveData, tokenData, userReserveSummary])
+    return new BN(userReserveSummary.reserve.priceInUSD).multipliedBy(aaveData.userSummary.availableBorrowsUSD).toString()
+  }, [ aaveData, userReserveSummary ])
 
-  const [ amount, setAmount ] = useState({
-    formatted: '',
-    value: 0n,
+  const [ amount, setAmount ] = useState('')
+
+  const borrow = useAaveBorrow({
+    user: address!,
+    reserve: selectedToken.address,
+    amount,
+    interestRateMode: InterestRate.Variable,
   })
 
   return (
@@ -61,10 +68,7 @@ const AaveBorrow: FC = () => {
             selected={selectedToken}
             onChange={(newToken) => {
               setSelectedToken(newToken)
-              setAmount({
-                formatted: '',
-                value: 0n,
-              })
+              setAmount('')
             }}
             opaqueOnDisabled={false}
           />
@@ -75,25 +79,20 @@ const AaveBorrow: FC = () => {
         <div className="dapp-block-section-header">Available to Borrow</div>
         <div className="dapp-block-section-content overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="text-xl text-ellipsis">
-            ${new BN(aaveData?.userSummary?.availableBorrowsUSD ?? '0').toFormat(2)} ~ {formatUnits(maxBorrowAmount, tokenData?.decimals ?? 0)}
+            ${new BN(aaveData?.userSummary?.availableBorrowsUSD ?? '0').toFormat(2)} ~ {maxBorrowAmount}
           </span>
         </div>
       </div>
 
       <div className="dapp-block-section">
         <div className="dapp-block-section-content grid grid-cols-4 gap-2">
-          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount.formatted} onChange={(evt) => {
-            const formatted = evt.target.value
-            const value = parseUnits(formatted, tokenData?.decimals ?? 0)
-            setAmount({ formatted, value })
+          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount} onChange={(evt) => {
+            setAmount(evt.target.value)
           }}/>
           <input className="col-start-4 col-end-4" type="button" value="Max" onClick={() => {
             if (!tokenData) return
 
-            setAmount({
-              formatted: formatUnits(maxBorrowAmount, tokenData?.decimals ?? 0),
-              value: maxBorrowAmount,
-            })
+            setAmount(maxBorrowAmount)
           }}/>
         </div>
       </div>
@@ -112,7 +111,7 @@ const AaveBorrow: FC = () => {
       </div>
 
       <div className="block-section">
-        <input type="button" value="Borrow"/>
+        <input type="button" value="Borrow" onClick={async () => borrow.execute()}/>
       </div>
     </Block>
   )

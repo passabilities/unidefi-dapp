@@ -1,21 +1,23 @@
 import { getEthersProvider } from '@/lib/ethers'
 import { config } from '@/lib/wagmiConfig'
+import { LPBorrowParamsType } from '@aave/contract-helpers/dist/esm/v3-pool-contract/lendingPoolTypes'
 import {
   UiPoolDataProvider,
   UiIncentiveDataProvider,
-  ChainId,
+  ChainId, Pool,
 } from '@aave/contract-helpers'
 import { formatReserves, formatUserSummary, formatUserSummaryAndIncentives } from '@aave/math-utils'
 import * as markets from '@bgd-labs/aave-address-book'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useSendTransaction } from 'wagmi'
 
-interface Args {
+const provider = getEthersProvider(config)!
+
+interface AaveDataArgs {
   address?: string
 }
 
-export const useAaveData = ({ address }: Args) => {
-  const provider = useMemo(() => getEthersProvider(config)!, [])
-
+export const useAaveData = ({ address }: AaveDataArgs) => {
   // View contract used to fetch all reserves data (including market base currency data), and user reserves
   // Using Aave V3 Eth Mainnet address for demo
   const poolDataProviderContract = useMemo(() =>
@@ -96,12 +98,12 @@ export const useAaveData = ({ address }: Args) => {
         }),
       )
     })
-  }, [incentiveDataProviderContract, poolDataProviderContract])
+  }, [ incentiveDataProviderContract, poolDataProviderContract ])
 
   useEffect(() => {
     if (!address) return
     fetchAndProcess(address)
-  }, [address, fetchAndProcess])
+  }, [ address, fetchAndProcess ])
 
   const dataResponse = useMemo(
     () => {
@@ -120,5 +122,78 @@ export const useAaveData = ({ address }: Args) => {
     update: () => {
       if (address) fetchAndProcess(address)
     },
+  }
+}
+
+interface AaveBorrowArgs extends LPBorrowParamsType {
+
+}
+
+export const useAaveBorrow = (args: AaveBorrowArgs) => {
+  const sendTx = useSendTransaction()
+
+  const execute = useCallback(async () => {
+    const pool = new Pool(provider, {
+      POOL: markets.AaveV3Ethereum.POOL,
+      WETH_GATEWAY: markets.AaveV3Ethereum.WETH_GATEWAY,
+    })
+
+    const txs = await pool.borrow({
+      user: args.user,
+      reserve: args.reserve,
+      amount: args.amount,
+      interestRateMode: args.interestRateMode,
+
+      onBehalfOf: args.onBehalfOf,
+      debtTokenAddress: args.debtTokenAddress,
+      encodedTxData: args.encodedTxData,
+      referralCode: args.referralCode,
+      useOptimizedPath: args.useOptimizedPath,
+    })
+
+    // TODO: execute the transactions
+    const txChain = txs.reduce(
+      // (chain, { txType, tx }) => chain.then(async () => sendTx.sendTransactionAsync(await tx())),
+      (chain, { txType, tx: getRawTx }) => chain.then(async () => {
+        const rawTx = await getRawTx()
+
+        const gas = rawTx.gasLimit ? BigInt(rawTx.gasLimit.toString()) : undefined
+        const gasPrice = rawTx.gasPrice ? BigInt(rawTx.gasPrice.toString()) : undefined
+        const value = rawTx.value ? BigInt(rawTx.value) : undefined
+
+        const processedRawTx = {
+          to: rawTx.to as `0x${string}`,
+          nonce: rawTx.nonce,
+          gas,
+          gasPrice,
+          data: rawTx.data as `0x${string}`,
+          value,
+        }
+
+        await sendTx.sendTransactionAsync(processedRawTx)
+      }),
+      Promise.resolve(),
+    )
+
+    try {
+      await txChain
+    } catch (err) {
+      console.error(err)
+    }
+  }, [
+    args.amount,
+    args.debtTokenAddress,
+    args.encodedTxData,
+    args.interestRateMode,
+    args.onBehalfOf,
+    args.referralCode,
+    args.reserve,
+    args.useOptimizedPath,
+    args.user,
+    sendTx
+  ])
+
+  return {
+    execute,
   }
 }
