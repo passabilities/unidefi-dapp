@@ -7,12 +7,14 @@ import {
 } from '@aave/contract-helpers'
 import { formatReserves, formatUserSummary, formatUserSummaryAndIncentives } from '@aave/math-utils'
 import * as markets from '@bgd-labs/aave-address-book'
-import { useEffect, useMemo, useState } from 'react'
-import { useAccount } from 'wagmi'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 
-export const useAaveData = () => {
+interface Args {
+  address?: string
+}
+
+export const useAaveData = ({ address }: Args) => {
   const provider = useMemo(() => getEthersProvider(config)!, [])
-  const { address: currentAccount } = useAccount()
 
   // View contract used to fetch all reserves data (including market base currency data), and user reserves
   // Using Aave V3 Eth Mainnet address for demo
@@ -40,10 +42,8 @@ export const useAaveData = () => {
   const [ reserves, setReserves ] = useState<ReturnType<typeof formatReserves>>()
   const [ userSummary, setUserSummary ] = useState<ReturnType<typeof formatUserSummary>>()
 
-  useEffect(() => {
-    if (!currentAccount) return
-
-    (async () => {
+  const fetchAndProcess = useCallback((address: string) => {
+    void new Promise(async () => {
       // Object containing array of pool reserves and market base currency data
       // { reservesArray, baseCurrencyData }
       const reserves =
@@ -56,7 +56,7 @@ export const useAaveData = () => {
       const userReserves =
         await poolDataProviderContract.getUserReservesHumanized({
           lendingPoolAddressProvider: markets.AaveV3Ethereum.POOL_ADDRESSES_PROVIDER,
-          user: currentAccount,
+          user: address,
         })
 
       // Array of incentive tokens with price feed and emission APR
@@ -71,7 +71,7 @@ export const useAaveData = () => {
         await incentiveDataProviderContract.getUserReservesIncentivesDataHumanized({
           lendingPoolAddressProvider:
           markets.AaveV3Ethereum.POOL_ADDRESSES_PROVIDER,
-          user: currentAccount,
+          user: address,
         })
 
       const formattedReserves =
@@ -92,14 +92,33 @@ export const useAaveData = () => {
           formattedReserves,
           userEmodeCategoryId: userReserves.userEmodeCategoryId,
           reserveIncentives,
-          userIncentives
+          userIncentives,
         }),
       )
-    })()
-  }, [ currentAccount, incentiveDataProviderContract, poolDataProviderContract ])
+    })
+  }, [incentiveDataProviderContract, poolDataProviderContract])
+
+  useEffect(() => {
+    if (!address) return
+    fetchAndProcess(address)
+  }, [address, fetchAndProcess])
+
+  const dataResponse = useMemo(
+    () => {
+      if (!reserves || !userSummary) return
+
+      return {
+        reserves,
+        userSummary,
+      }
+    },
+    [ reserves, userSummary ],
+  )
 
   return {
-    reserves,
-    userSummary,
+    data: dataResponse,
+    update: () => {
+      if (address) fetchAndProcess(address)
+    },
   }
 }

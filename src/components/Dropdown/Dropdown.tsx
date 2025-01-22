@@ -3,19 +3,15 @@ import { useState } from 'react'
 type Props<T, K> = {
   items: T[]
   itemsValueKey: K
-  opaqueOnDisabled?: boolean
+  selected?: T
   onChange?: (item: T) => void
+  opaqueOnDisabled?: boolean
 }
 
 export function Dropdown<T extends Record<string, any>, K extends keyof T>(props: Props<T, K>) {
-  const { items, itemsValueKey, opaqueOnDisabled = true, onChange } = props
+  const { items, itemsValueKey, selected, onChange, opaqueOnDisabled = true } = props
 
   const [ activated, setActivated ] = useState(false)
-  const [ selectedItem, setSelectedItem ] = useState<T>(() => {
-    const item = items[0]
-    if (item) onChange?.(item)
-    return item
-  })
 
   return (
     <>
@@ -26,7 +22,7 @@ export function Dropdown<T extends Record<string, any>, K extends keyof T>(props
         disabled={items.length <= 1}
         onClick={() => setActivated((prev) => !prev)}
       >
-        {selectedItem[itemsValueKey]}
+        {selected?.[itemsValueKey] ?? 'Select...'}
       </button>
       {activated && (
         <ul
@@ -41,9 +37,8 @@ export function Dropdown<T extends Record<string, any>, K extends keyof T>(props
               role="menuitem"
               className="cursor-pointer text-slate-800 flex w-full text-sm items-center rounded-md p-3 transition-all hover:bg-slate-100 focus:bg-slate-100 active:bg-slate-100"
               onClick={() => {
-                if (item === selectedItem) return
+                if (item === selected) return
 
-                setSelectedItem(item)
                 onChange?.(item)
                 setActivated(false)
               }}

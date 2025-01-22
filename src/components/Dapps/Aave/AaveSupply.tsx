@@ -1,4 +1,4 @@
-import { useAaveData } from '@/components/Dapps/Aave/aave-utils'
+import { useAaveContext } from '@/components/Dapps/Aave/AaveContext'
 import Dropdown from '@/components/Dropdown'
 import * as markets from '@bgd-labs/aave-address-book'
 import { Block } from '@/components/Block/Block'
@@ -10,32 +10,37 @@ import { useAccount, useBalance } from 'wagmi'
 
 import './styles.css'
 
+interface Token {
+  symbol: string
+  address: string
+}
+
+const tokens: Token[] = [
+  {
+    address: markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING,
+    symbol: 'wstETH',
+  },
+]
+
 const AaveSupply: FC = () => {
   const { address } = useAccount()
 
-  const aaveData = useAaveData()
-  const reserveSummary = useMemo(() => aaveData.reserves?.find(r => getAddress(r.underlyingAsset) === getAddress(markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING)), [ aaveData.reserves ])
-  const userReserveSummary = useMemo(() => aaveData.userSummary?.userReservesData?.find(r => getAddress(r.underlyingAsset) === getAddress(markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING)), [ aaveData.userSummary?.userReservesData ])
+  const { data: aaveData } = useAaveContext()
+  const userReserveSummary = useMemo(() => aaveData?.userSummary?.userReservesData?.find(r => getAddress(r.underlyingAsset) === getAddress(markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING)), [ aaveData?.userSummary?.userReservesData ])
 
   const stETHBalance = useBalance({
     address,
     token: markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING,
   })
 
-  console.log({ reserveSummary, userReserveSummary, userSummary: aaveData.userSummary })
-
   return (
     <Block id={DappId.AAVE_SUPPLY} header="Supply">
       <div className="dapp-block-section">
         <div className="dapp-block-section-content">
           <Dropdown
-            items={[
-              {
-                address: markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING,
-                symbol: 'wstETH'
-              }
-            ]}
+            items={tokens}
             itemsValueKey={'symbol'}
+            selected={tokens[0]}
             opaqueOnDisabled={false}
           />
         </div>
