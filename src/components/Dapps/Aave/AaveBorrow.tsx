@@ -5,11 +5,12 @@ import Dropdown from '@/components/Dropdown'
 import * as markets from '@bgd-labs/aave-address-book'
 import BN from 'bignumber.js'
 import { FC, useMemo, useState } from 'react'
-import { getAddress } from 'viem'
+import { formatUnits, getAddress, parseUnits } from 'viem'
+import { useToken } from 'wagmi'
 
 interface Token {
   symbol: string
-  address: string
+  address: `0x${string}`
 }
 
 const tokens: Token[] = [
@@ -25,6 +26,9 @@ const tokens: Token[] = [
 
 const AaveBorrow: FC = () => {
   const [ selectedToken, setSelectedToken ] = useState<Token>(tokens[0])
+  const { data: tokenData } = useToken({
+    address: selectedToken.address,
+  })
 
   const { data: aaveData } = useAaveContext()
   const userReserveSummary = useMemo(
@@ -35,6 +39,18 @@ const AaveBorrow: FC = () => {
     [aaveData?.userSummary, selectedToken]
   )
 
+  const maxBorrowAmount = useMemo(() => {
+    if (!userReserveSummary || !aaveData || !tokenData) return 0n
+
+    const amount = new BN(userReserveSummary.reserve.priceInUSD).multipliedBy(aaveData.userSummary.availableBorrowsUSD).toString()
+    return parseUnits(amount, tokenData.decimals)
+  }, [aaveData, tokenData, userReserveSummary])
+
+  const [ amount, setAmount ] = useState({
+    formatted: '',
+    value: 0n,
+  })
+
   return (
     <Block id={DappId.AAVE_BORROW} header="Borrow">
       <div className="dapp-block-section">
@@ -43,7 +59,13 @@ const AaveBorrow: FC = () => {
             items={tokens}
             itemsValueKey="symbol"
             selected={selectedToken}
-            onChange={setSelectedToken}
+            onChange={(newToken) => {
+              setSelectedToken(newToken)
+              setAmount({
+                formatted: '',
+                value: 0n,
+              })
+            }}
             opaqueOnDisabled={false}
           />
         </div>
@@ -53,16 +75,26 @@ const AaveBorrow: FC = () => {
         <div className="dapp-block-section-header">Available to Borrow</div>
         <div className="dapp-block-section-content overflow-hidden text-ellipsis whitespace-nowrap">
           <span className="text-xl text-ellipsis">
-            ${new BN(aaveData?.userSummary?.availableBorrowsUSD ?? '0').toFormat(2)} ~ {new BN(userReserveSummary?.reserve?.priceInUSD ?? '0').multipliedBy(aaveData?.userSummary?.availableBorrowsUSD ?? '0').toFormat(2)}
+            ${new BN(aaveData?.userSummary?.availableBorrowsUSD ?? '0').toFormat(2)} ~ {formatUnits(maxBorrowAmount, tokenData?.decimals ?? 0)}
           </span>
         </div>
       </div>
 
       <div className="dapp-block-section">
-        <div className="dapp-block-section-header">Amount</div>
+        <div className="dapp-block-section-content grid grid-cols-4 gap-2">
+          <input className="col-start-1 col-end-4" placeholder="0.00" value={amount.formatted} onChange={(evt) => {
+            const formatted = evt.target.value
+            const value = parseUnits(formatted, tokenData?.decimals ?? 0)
+            setAmount({ formatted, value })
+          }}/>
+          <input className="col-start-4 col-end-4" type="button" value="Max" onClick={() => {
+            if (!tokenData) return
 
-        <div className="dapp-block-section-content">
-          <input className="" placeholder="0.00"/>
+            setAmount({
+              formatted: formatUnits(maxBorrowAmount, tokenData?.decimals ?? 0),
+              value: maxBorrowAmount,
+            })
+          }}/>
         </div>
       </div>
 

@@ -12,7 +12,7 @@ import './styles.css'
 
 interface Token {
   symbol: string
-  address: string
+  address: `0x${string}`
 }
 
 const tokens: Token[] = [
