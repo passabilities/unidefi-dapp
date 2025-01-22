@@ -16,34 +16,28 @@ import { useSendTransaction } from 'wagmi'
 
 const provider = getEthersProvider(config)!
 
+// View contract used to fetch all reserves data (including market base currency data), and user reserves
+// Using Aave V3 Eth Mainnet address for demo
+const poolDataProviderContract = new UiPoolDataProvider({
+  uiPoolDataProviderAddress: markets.AaveV3Ethereum.UI_POOL_DATA_PROVIDER,
+  provider,
+  chainId: ChainId.mainnet,
+})
+
+// View contract used to fetch all reserve incentives (APRs), and user incentives
+// Using Aave V3 Eth Mainnet address for demo
+const incentiveDataProviderContract = new UiIncentiveDataProvider({
+  uiIncentiveDataProviderAddress:
+  markets.AaveV3Ethereum.UI_INCENTIVE_DATA_PROVIDER,
+  provider,
+  chainId: ChainId.mainnet,
+})
+
 interface AaveDataArgs {
   address?: string
 }
 
 export const useAaveData = ({ address }: AaveDataArgs) => {
-  // View contract used to fetch all reserves data (including market base currency data), and user reserves
-  // Using Aave V3 Eth Mainnet address for demo
-  const poolDataProviderContract = useMemo(() =>
-      new UiPoolDataProvider({
-        uiPoolDataProviderAddress: markets.AaveV3Ethereum.UI_POOL_DATA_PROVIDER,
-        provider,
-        chainId: ChainId.mainnet,
-      }),
-    [ provider ],
-  )
-
-  // View contract used to fetch all reserve incentives (APRs), and user incentives
-  // Using Aave V3 Eth Mainnet address for demo
-  const incentiveDataProviderContract = useMemo(() =>
-      new UiIncentiveDataProvider({
-        uiIncentiveDataProviderAddress:
-        markets.AaveV3Ethereum.UI_INCENTIVE_DATA_PROVIDER,
-        provider,
-        chainId: ChainId.mainnet,
-      }),
-    [ provider ],
-  )
-
   const [ reserves, setReserves ] = useState<ReturnType<typeof formatReserves>>()
   const [ userSummary, setUserSummary ] = useState<ReturnType<typeof formatUserSummary>>()
 
@@ -101,7 +95,7 @@ export const useAaveData = ({ address }: AaveDataArgs) => {
         }),
       )
     })
-  }, [ incentiveDataProviderContract, poolDataProviderContract ])
+  }, [])
 
   useEffect(() => {
     if (!address) return
@@ -128,9 +122,7 @@ export const useAaveData = ({ address }: AaveDataArgs) => {
   }
 }
 
-interface AaveSupplyArgs extends LPSupplyParamsType {
-
-}
+type AaveSupplyArgs = LPSupplyParamsType
 
 export const useAaveSupply = (args: AaveSupplyArgs) => {
   const sendTx = useSendTransaction()
@@ -151,10 +143,10 @@ export const useAaveSupply = (args: AaveSupplyArgs) => {
       referralCode: args.referralCode,
       useOptimizedPath: args.useOptimizedPath,
     })
-    console.log({txs})
+    console.log({ txs })
 
     const txChain = txs.reduce(
-      (chain, { txType, tx: getRawTx }) => chain.then(async () => {
+      (chain, { tx: getRawTx }) => chain.then(async () => {
         const rawTx = await getRawTx()
 
         const gas = rawTx.gasLimit ? BigInt(rawTx.gasLimit.toString()) : undefined
@@ -196,9 +188,7 @@ export const useAaveSupply = (args: AaveSupplyArgs) => {
   }
 }
 
-interface AaveBorrowArgs extends LPBorrowParamsType {
-
-}
+type AaveBorrowArgs = LPBorrowParamsType
 
 export const useAaveBorrow = (args: AaveBorrowArgs) => {
   const sendTx = useSendTransaction()
@@ -223,7 +213,7 @@ export const useAaveBorrow = (args: AaveBorrowArgs) => {
     })
 
     const txChain = txs.reduce(
-      (chain, { txType, tx: getRawTx }) => chain.then(async () => {
+      (chain, { tx: getRawTx }) => chain.then(async () => {
         const rawTx = await getRawTx()
 
         const gas = rawTx.gasLimit ? BigInt(rawTx.gasLimit.toString()) : undefined

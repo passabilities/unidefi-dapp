@@ -8,7 +8,7 @@ type Props<T, K> = {
   opaqueOnDisabled?: boolean
 }
 
-export function Dropdown<T extends Record<string, any>, K extends keyof T>(props: Props<T, K>) {
+export function Dropdown<T extends { [P in K]: T[P] }, K extends keyof T>(props: Props<T, K>) {
   const { items, itemsValueKey, selected, onChange, opaqueOnDisabled = true } = props
 
   const [ activated, setActivated ] = useState(false)

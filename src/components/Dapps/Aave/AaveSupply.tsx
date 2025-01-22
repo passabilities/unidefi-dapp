@@ -26,7 +26,7 @@ const tokens: Token[] = [
 const AaveSupply: FC = () => {
   const { address } = useAccount()
 
-  const [ selectedToken, setSelectedToken ] = useState<Token>(tokens[0])
+  const [ selectedToken ] = useState<Token>(tokens[0])
 
   const { data: aaveData } = useAaveContext()
   const userReserveSummary = useMemo(() => aaveData?.userSummary?.userReservesData?.find(r => getAddress(r.underlyingAsset) === getAddress(markets.AaveV3Ethereum.ASSETS.wstETH.UNDERLYING)), [ aaveData?.userSummary?.userReservesData ])
